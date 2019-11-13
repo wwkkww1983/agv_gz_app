@@ -49,7 +49,7 @@
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
-          <DebugInformation>0</DebugInformation>
+          <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
           <ListingPath>.\build\Listings\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
@@ -361,7 +361,7 @@
             <useXO>0</useXO>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F10X_HD, USE_STDPERIPH_DRIVER, __LOG=1, __LOG_INFO_APP=0,__LOG_DEBUG=0</Define>
+              <Define>STM32F10X_HD, USE_STDPERIPH_DRIVER, __LOG=1, __LOG_INFO_APP=0,__LOG_DEBUG=0, __DEBUG</Define>
               <Undefine></Undefine>
               <IncludePath>.\app;.\drivers;.\drivers\pmbus;.\FreeRTOS\inc;.\FreeRTOS\port\RVDS\ARM_CM3;.\libraries\CMSIS;.\libraries\CMSIS\startup;.\libraries\STM32F10x_StdPeriph_Driver\inc;..\gz_app</IncludePath>
             </VariousControls>
@@ -570,6 +570,11 @@
               <FileName>tsk_key.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\tsk_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>service.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\service.c</FilePath>
             </File>
           </Files>
         </Group>
