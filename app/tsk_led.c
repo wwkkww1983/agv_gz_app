@@ -107,23 +107,23 @@ uint32_t ulNotifiedValue;
 		    {
 		    	mask = 1 << i;
 		    	if( reg_ac_relay & mask )
-		            ac_relay_led_operation( LED_OFF, i );
+		            ac_relay_led_operation( LED_ON, i );
 		    	else
 		            ac_relay_led_operation( LED_TOGGLE, i );
 
 		    	if( reg_chmod & mask )
-		            chmod_led_operation( LED_OFF, i );
+		            chmod_led_operation( LED_ON, i );
 		    	else
 		            chmod_led_operation( LED_TOGGLE, i );
 		    }
 
 			if( reg_fan_fb & 0x01 )
-		        fan1_speed_ctl_led_operation( LED_OFF, PIN_ALL );
+		        fan1_speed_ctl_led_operation( LED_ON, PIN_ALL );
 			else
 		        fan1_speed_ctl_led_operation( LED_TOGGLE, PIN_ALL );
 
 			if( reg_fan_fb & 0x02 )
-		        fan2_speed_ctl_led_operation( LED_OFF, PIN_ALL );
+		        fan2_speed_ctl_led_operation( LED_ON, PIN_ALL );
 			else
 		        fan2_speed_ctl_led_operation( LED_TOGGLE, PIN_ALL );
 		}
