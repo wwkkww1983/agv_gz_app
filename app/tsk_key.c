@@ -33,43 +33,11 @@ void key_entry(void *pvParameters)
     { FAN_1_ERR_CHK_GPIO_PORT, FAN_1_ERR_CHK_GPIO_PIN, 0, 0, 0xff, KEY_HIGH, KEY_OFF, KEY_CHK_PRESS },
     { FAN_2_ERR_CHK_GPIO_PORT, FAN_2_ERR_CHK_GPIO_PIN, 0, 0, 0xff, KEY_HIGH, KEY_OFF, KEY_CHK_PRESS }
 	};
-
+	
 xLastWakeTime = xTaskGetTickCount();
 
 	while (1)
 	{
-#if 0
-		for( i=0; i<18; i++ )
-		{
-			key_detect( &key_tab[i] );
-//			kprintf("\r\n%d, cur:%d", i, key_tab[i].cur);
-//			kprintf("\r\n%d, step:%d", i, key_tab[i].chk_step);
-
-			mask = (uint32_t)(1 << i);
-			switch( key_tab[i].chk_step )
-			{
-				case KEY_CHK_PRESS:
-			        if( key_tab[i].cur != KEY_OFF )
-					{
-						LOG_INFO_APP("\r\nkey:%d pressed, msk:0X%08X", i+1, mask);
-						kprintf("\r\nkey:%d pressed, msk:0X%08X", i+1, mask);
-						xTaskNotify( h_led_entry, mask, eSetBits );
-					}
-					break;
-				case KEY_CHK_RELEASE:
-			        if( key_tab[i].cur == KEY_OFF )
-					{
-						LOG_INFO_APP("\r\nkey:%d released, msk:0X%08X", i+1, mask);
-						kprintf("\r\nkey:%d released, msk:0X%08X", i+1, mask);
-						xTaskNotify( h_led_entry, mask, eSetBits );
-					}
-					break;
-				default:
-					break;
-			}
-		}
-#endif
-#if 1
 		for( i=0; i<18; i++ )
 		{
 			mask = (uint32_t)(1 << i);
@@ -93,7 +61,6 @@ xLastWakeTime = xTaskGetTickCount();
 					break;
 			}
 		}
-#endif
 
 		vTaskDelayUntil( &xLastWakeTime, xPeriod );
 	}

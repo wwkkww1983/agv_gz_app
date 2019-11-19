@@ -26,11 +26,12 @@
 #define    KEY_MID_TIME           ( ( 1000 ) / ( KEY_SCAN_INTERVAL ) )   // 中按时间定义为：1s
 #define    KEY_LONG_TIME          ( ( 2000 ) / ( KEY_SCAN_INTERVAL ) )   // 长按时间定为为：2s
 
-typedef enum key_chk_step{
+typedef enum _key_chk_step{
     KEY_CHK_PRESS,
     KEY_CHK_RELEASE
 }KeyChkStepDef;
 
+#pragma pack(1)
 typedef struct _key_type_def
 {
 	GPIO_TypeDef *GPIOx;
@@ -41,7 +42,7 @@ typedef struct _key_type_def
 	uint8_t default_level; // 按键的默认电平
 
 	uint8_t cur;           // 保存当前按键状态
-	KeyChkStepDef chk_step;      // 保存当前按键处于哪种检测状态
+	enum _key_chk_step chk_step;      // 保存当前按键处于哪种检测状态
 }KeyTypeDef;
 
 

@@ -45,6 +45,12 @@ extern TaskHandle_t h_key_entry;
 void key_entry(void *pvParameters);
 
 
+#define    TX_BIT                                 (uint32_t)(bit(0))
+#define    RX_BIT                                 (uint32_t)(bit(1))
+#define    TX_IDLE_BIT                            (uint32_t)(bit(2))
+#define    RX_IDLE_BIT                            (uint32_t)(bit(3))
+
+#if 0
 
 #define    MS_BASE    10280ul    // ¥Û‘º1ms
 #define    MS(n)      ((MS_BASE)*(n))
@@ -842,7 +848,7 @@ void suspend_ext( void );
 void resume_ext( void );
 
 
-
+#endif
 
 #ifdef    ASSERT_APP
 #define   _ASSERT_APP    1

@@ -207,7 +207,8 @@ BaseType_t xReturn = pdTRUE;
 
 void cmd_entry( void *pvParameter )
 {
-const TickType_t xMaxBlockTime = portMAX_DELAY; /*pdMS_TO_TICKS( 500 );*/
+//const TickType_t xMaxBlockTime = portMAX_DELAY; /*pdMS_TO_TICKS( 500 );*/
+	const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 1000 );
 BaseType_t xResult;
 uint32_t ulNotifiedValue;
 uint8_t rx_len = 0;
@@ -323,6 +324,7 @@ uint8_t *ptr = buffer;
         {
             /* Did not receive a notification within the expected time. */
 //            prvCheckForErrors();
+			printf("hello,gz\r\n");
         }
 	}
 }
