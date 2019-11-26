@@ -85,11 +85,13 @@ xSemaphoreGive( xMutexCanSend );
 			}
 			else if (ulNotifiedValue & NOTIFY_TSK_CAN_TEST )
 			{
+				g_e_can_test_status = CAN_TEST_CAN_COM;
 				can_send_cmd( CAN_PROTOCAL_FUN_QUERY, CAN_PROTOCAL_CMD_QUERY_ONLINE );
 			    xTimerStart( xTimersBox_Test[TEST_TIMER_ID_CAN], 0 );
 			}
 			else if (ulNotifiedValue & NOTIFY_TSK_CAN_PMBUS_TEST )
 			{
+				g_e_can_test_status = CAN_TEST_PMBUS_COM;
 				can_send_cmd( CAN_PROTOCAL_FUN_QUERY, CAN_PROTOCAL_CMD_QUERY_PMBUS );
 			    xTimerStart( xTimersBox_Test[TEST_TIMER_ID_CAN], 0 );
 			}
