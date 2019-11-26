@@ -4,6 +4,7 @@
 #include "stm32f10x.h"
 #include "uart.h"
 
+#include "timers.h"
 
 
 #ifdef __DEBUG
@@ -74,7 +75,12 @@ void print_tsk_status(void);
                                           if(__LOG_TRACE) { printf(fmt, ##arg); fflush(stdout); } \
                                           }while(0)
 
+#define  NUM_TEST_TIMERS           3
+#define  TEST_TIMER_ID_CAN         0
+#define  TEST_TIMER_ID_485         1
+#define  TEST_TIMER_ID_ETHERNET    2
 
+										  
 
 void delay_ms( __IO uint32_t _T );
 void delay_us( __IO uint32_t _T );
@@ -84,6 +90,8 @@ void myprintf(const char *fmt, ...);
 extern TaskHandle_t h_printf_entry;
 extern TaskHandle_t h_cmd_entry;
 void service_init(void);
+										  
+extern TimerHandle_t xTimersBox_Test[];
 
 #endif // service.h
 

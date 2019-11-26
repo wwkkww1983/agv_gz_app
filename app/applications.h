@@ -12,7 +12,7 @@ note.
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
-
+#include "limits.h"
 #include "board.h"
 #include "uart.h"
 //#include "service.h"
@@ -34,7 +34,7 @@ typedef    uint8_t    BOOL;
 #define    VER_SW    "gz_01.11.13"
 
 #define    LED_STACK    256
-#define    LED_PRIO     1
+#define    LED_PRIO     2
 extern TaskHandle_t h_led_entry;
 void led_entry(void *pvParameters);
 
@@ -44,11 +44,185 @@ void led_entry(void *pvParameters);
 extern TaskHandle_t h_key_entry;
 void key_entry(void *pvParameters);
 
+#define   EXT_BMS_COMM_STACK    256
+#define   EXT_BMS_COMM_PRIO     5
+extern TaskHandle_t h_ext_bms_comm_entry; 
+void 	bms_comm_entry(void);
+uint16_t cache_bms_rx( SPI_TypeDef* SPIx, u8 port );
+#define    NOTIFY_TSK_BMS_TEST  (uint32_t)(bit(4))
+extern uint32_t g_u32_test_result_bms;
+
+#define   CAN_COMM_STACK    512
+#define   CAN_COMM_PRIO     3
+extern TaskHandle_t h_can_comm_entry; 
+void   can_comm_entry( void * pvParameters );
+#define   NOTIFY_TSK_CAN_TEST        (uint32_t)(bit(4))
+#define   NOTIFY_TSK_CAN_PMBUS_TEST  (uint32_t)(bit(5))
+typedef enum _can_test_status{
+    CAN_TEST_CAN_COM,
+	CAN_TEST_PMBUS_COM
+}eCanTestStatusDef;
+extern eCanTestStatusDef g_e_can_test_status;
+
+#define   EXT_WIFI_STACK    1024
+#define   EXT_WIFI_PRIO     3
+extern TaskHandle_t h_ext_wifi_entry; 
+void   ext_wifi_entry( void * pvParameters );
+#define   NOTIFY_TSK_WIFI_TEST  (uint32_t)(bit(4))
+
+// 任务相关
+#define    TOUCH_SCREEN_STACK    512
+#define    TOUCH_SCREEN_PRIO     5
+extern TaskHandle_t h_touch_screen_entry;
+extern TaskHandle_t xTouchScreenDamonHandle; // 屏幕刷新任务的句柄
+void touch_screen_entry( void *pvParameter );
 
 #define    TX_BIT                                 (uint32_t)(bit(0))
 #define    RX_BIT                                 (uint32_t)(bit(1))
 #define    TX_IDLE_BIT                            (uint32_t)(bit(2))
 #define    RX_IDLE_BIT                            (uint32_t)(bit(3))
+
+
+#define    NOTIFY_TSK_CMD_CAN_TEST_SUCCESS        (uint32_t)(bit(5))
+#define    NOTIFY_TSK_CMD_CAN_TEST_FAILED         (uint32_t)(bit(6))
+#define    NOTIFY_TSK_CMD_485_TEST_SUCCESS        (uint32_t)(bit(7))
+#define    NOTIFY_TSK_CMD_485_TEST_FAILED         (uint32_t)(bit(8))
+#define    NOTIFY_TSK_CMD_ETHERNET_TEST_SUCCESS   (uint32_t)(bit(9))
+#define    NOTIFY_TSK_CMD_ETHERNET_TEST_FAILED    (uint32_t)(bit(10))
+#define    NOTIFY_TSK_CMD_PMBUS_TEST_SUCCESS      (uint32_t)(bit(11))
+#define    NOTIFY_TSK_CMD_PMBUS_TEST_FAILED       (uint32_t)(bit(12))
+
+
+
+#define    sleep_ms(time)    vTaskDelay( pdMS_TO_TICKS( ( time ) ) )
+
+#define    POWER_UNIT_NUM       8
+
+// 触摸屏通讯任务相关
+#define    HMI_FRAME_DATA_SIZE    125
+typedef struct _hmi_info_def
+{
+	struct
+	{
+		struct
+		{
+		    uint16_t pre;
+			uint16_t cur;
+			uint16_t cur_rd;
+		}id;
+		uint16_t type; //五大模块+屏保，分别是主页，设置，事件，维护，帮助，屏保
+	}page;
+	
+	struct
+	{
+		uint8_t type;
+	    uint8_t st;
+	}ico;
+
+	uint32_t timeout;  // 屏保超时，暂时定义为5分钟
+	uint32_t page_flush_time; // 刷新时间
+	uint8_t flag_setting;
+}HMI_InfoDef;
+
+typedef struct _hmi_rx_frame_def
+{
+    uint16_t header;
+	uint8_t  len; // 数据帧长度，单位是字节
+	uint8_t  ins;
+	struct
+	{
+	    uint16_t addr;
+	    uint8_t  len;  // 数据长度，单位是字
+	    uint16_t  data[HMI_FRAME_DATA_SIZE];
+	}data;
+	struct
+	{
+	    uint8_t addr;
+		uint8_t len;
+		uint8_t data[HMI_FRAME_DATA_SIZE];  // 寄存器的数据有 Byte的，也有word的，所以定义成byte类型的
+	}data_reg;
+}HMI_RxFrameDef;
+
+#define    CHGR_CNT_BOX_SIZE    10
+typedef struct _power_unit_info_def
+{
+	struct
+	{
+		uint8_t bat;       // 电池是否连接
+		uint8_t chgr;      // 是否在充电
+		uint8_t restart;   // 是否在重启
+		uint8_t err;          // 是否有异常，0->代表没有异常
+		uint8_t warn;        // 警告信息
+		uint8_t num;         // 模块序号
+		uint8_t addr;        // 模块的PMBus通讯地址
+		int8_t  temp;        // 模块温度
+		int8_t temp_before;  // 上一次的温度
+		uint8_t flag_ac_power;   // 是否开机
+		uint8_t flag_delay_close_ac;    // 延时关闭AC输入，让风扇继续转，用来散热
+		uint8_t flag_bms_conn;   // bms是否连接
+		uint8_t flag_mode_switch; // 模式切换标志
+		uint16_t fan_speed;   // 模块的风扇转速
+
+		uint8_t flag_smp_calibrated; // 是否执行过电压采样校准,TRUE-执行过，FALSE-没执行过
+		float smp_bat_volt_ori;  // 采样的原始电压值
+		float smp_bat_calibrate_value; // 采样电压校准值
+		float bat_volt;      // 存储过滤检测到的电池电压
+	}basic;
+	
+	struct
+	{
+	    uint8_t step;
+		int32_t cnt_box[CHGR_CNT_BOX_SIZE];
+	}chgr;
+
+}PU_InfoDef;
+
+// 系统状态灯相关
+#define    BASIC_ERR_NO   0x00u
+#define    ERR_BAT_REVERSE  1u    // 该数字代表的是位
+#define    ERR_BAT_TYPE     2u
+#define    ERR_DC_OK        3u
+#define    ERR_T_ALARM      4u
+#define    ERR_OVER_OUTPUT  5u
+#define    ERR_BAT_CHGR_MOS_CLOSE    6u
+
+#define    BASIC_WARN_NO     0x00u
+#define    WARN_ILLEGAL_STOP 1u
+
+#define    BASIC_CHGR_OFF      0x00u
+#define    BASIC_CHGR_STARTING 0x01u
+#define    BASIC_CHGR_ING      0x02u
+#define    BASIC_CHGR_FINISH   0x03u
+#define    BASIC_CHGR_STOP_BY_HOST    0x04u  // 被上位机手动停止
+
+
+
+#define    CHGR_STEP_IDLE                                   0u
+#define    CHGR_STEP_CHK_BAT_REVERSE                        (uint16_t)(bit(0))
+#define    CHGR_STEP_CHK_BAT_CONN                           (uint16_t)(bit(1))
+
+
+
+#define    IDX_CNT_CHK_BAT_REVERSE     7
+#define    IDX_CNT_CHK_BAT_CONN        8
+
+// 电池图标相关
+#define    BASIC_BAT_DISCONN    0x00u
+#define    BASIC_BAT_CONN       0x01u
+#define    BASIC_BAT_REVERSE    0x02u
+#define    BASIC_BAT_CHGR_ING   0x04u
+#define    BASIC_BAT_FULL       0x08u
+
+
+#define    BAT_CONN_VOL_MIN       20
+#define    BAT_CONN_VOL_MAX       60
+#define    BAT_REVERSE_VOL    0
+
+void init_power_unit_info(void);
+
+
+
+
 
 #if 0
 
@@ -307,14 +481,9 @@ void key_entry(void *pvParameters);
 
 
 
-// 任务相关
-#define    TOUCH_SCREEN_STACK    512
-#define    TOUCH_SCREEN_PRIO     5
-extern TaskHandle_t h_touch_screen_entry;
-extern TaskHandle_t xTouchScreenDamonHandle; // 屏幕刷新任务的句柄
-void touch_screen_entry( void *pvParameter );
 
 
+#if 0
 //#define   CHGR_STACK    256
 //#define   CHGR_PRIO     5
 //extern TaskHandle_t h_charge_entry;
@@ -367,6 +536,8 @@ void wdg_daemon_task(void *pvParameters);
 #define    WDG_BIT_SMP_VOLT        bit(9)
 #define    WDG_BIT_TASK_ALL ( WDG_BIT_TOUCH_SCREEN | WDG_BIT_TOUCH_SCREEN_DAEMON | WDG_BIT_BMS_COMM | WDG_BIT_BMS_COMM_RX |\
 				              WDG_BIT_SMP_VOLT | WDG_BIT_EVENT_WRITE  | WDG_BIT_CHGR_TIME_CTRL | WDG_BIT_CHGR_DAEMON | WDG_BIT_SETTING | WDG_BIT_WIFI ) 
+#endif
+
 #endif
 
 extern QueueHandle_t xQueuePrint; // 向打印任务传输数据的消息队列

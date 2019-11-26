@@ -361,7 +361,7 @@
             <useXO>0</useXO>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F10X_HD, USE_STDPERIPH_DRIVER, __LOG=1, __LOG_INFO_APP=0,__LOG_DEBUG=0, __DEBUG</Define>
+              <Define>STM32F10X_HD, USE_STDPERIPH_DRIVER, __LOG_INFO_APP=0,__LOG_DEBUG=0, __DEBUG</Define>
               <Undefine></Undefine>
               <IncludePath>.\app;.\drivers;.\drivers\pmbus;.\FreeRTOS\inc;.\FreeRTOS\port\RVDS\ARM_CM3;.\libraries\CMSIS;.\libraries\CMSIS\startup;.\libraries\STM32F10x_StdPeriph_Driver\inc;..\gz_app</IncludePath>
             </VariousControls>
@@ -521,6 +521,11 @@
               <FileType>1</FileType>
               <FilePath>.\FreeRTOS\port\MemMang\heap_2.c</FilePath>
             </File>
+            <File>
+              <FileName>timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\FreeRTOS\src\timers.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -546,6 +551,41 @@
               <FileType>1</FileType>
               <FilePath>.\drivers\key.c</FilePath>
             </File>
+            <File>
+              <FileName>SPI_WK2168.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\SPI_WK2168.c</FilePath>
+            </File>
+            <File>
+              <FileName>exti.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\exti.c</FilePath>
+            </File>
+            <File>
+              <FileName>CAN.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\CAN.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_pmbus_stack.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\pmbus\bsp_pmbus_stack.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_rpb1600_48.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\pmbus\bsp_rpb1600_48.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_smbus_stack.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\pmbus\bsp_smbus_stack.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\adc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -562,6 +602,11 @@
               <FilePath>.\app\applications.c</FilePath>
             </File>
             <File>
+              <FileName>service.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\service.c</FilePath>
+            </File>
+            <File>
               <FileName>tsk_led.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\tsk_led.c</FilePath>
@@ -572,9 +617,24 @@
               <FilePath>.\app\tsk_key.c</FilePath>
             </File>
             <File>
-              <FileName>service.c</FileName>
+              <FileName>tsk_485.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\app\service.c</FilePath>
+              <FilePath>.\app\tsk_485.c</FilePath>
+            </File>
+            <File>
+              <FileName>tsk_can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\tsk_can.c</FilePath>
+            </File>
+            <File>
+              <FileName>tsk_ethernet.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\tsk_ethernet.c</FilePath>
+            </File>
+            <File>
+              <FileName>tsk_touch_screen.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\tsk_touch_screen.c</FilePath>
             </File>
           </Files>
         </Group>

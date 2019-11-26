@@ -353,7 +353,7 @@ static void init_usart1(void)
 	
 	uart_drv_init( usart1 );
 
-    usart1_dma_init();
+//    usart1_dma_init();
 
 #ifdef _SUPPORT_OS
     usart1->semaphore = xSemaphoreCreateBinary();
@@ -1078,8 +1078,8 @@ static void delay_ms_uart( __IO uint32_t _T )
  ****************************************************************************/
 void uart_init(void)
 {
-//	init_usart1();
-//	init_usart2();
+	init_usart1();
+	init_usart2();
 	init_uart4();
 	
 	delay_ms_uart(500); // 串口每次上电会接收到一个0xFF，延时500ms，然后清除0xFF
@@ -1089,13 +1089,13 @@ void uart_init(void)
 	com_cmd->def.init_structure_uart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	com_cmd->init();
 
-//	com_touch_screen->def.state_rx_int = ENABLE;
-//	com_touch_screen->def.init_structure_uart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-//	com_touch_screen->init();
+	com_touch_screen->def.state_rx_int = ENABLE;
+	com_touch_screen->def.init_structure_uart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	com_touch_screen->init();
 
-//	com_ext_wifi->def.state_rx_int = ENABLE;
-//	com_ext_wifi->def.init_structure_uart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-//	com_ext_wifi->init();
+	com_ext_wifi->def.state_rx_int = ENABLE;
+	com_ext_wifi->def.init_structure_uart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	com_ext_wifi->init();
 }
 
 void uart_save_from_isr( uart_dev *uart, uint8_t data )

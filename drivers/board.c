@@ -67,27 +67,24 @@ void hw_borad_init(void)
 	// FreeRTOS默认使用中断分组4，NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );	
 	
     uart_init();
-
 	sInitGpio();
     gz_test_gpio_init();
 	
-//	sInitPMBus();
-//	
-//	sInitRCB1600();
+	sInitPMBus();
+
+	sInitRCB1600();
 //	
 //	eeprom_init();
 
-//	adc_init();
+	adc_init();
 
-//    WK2168_Sys_Init();
-	
-#ifdef USE_CAN_SYNC // 使用双机通信, 20191101添加
+    WK2168_Sys_Init();
+
 	sCanInitial();
-#endif
-	
+
 //	basic_tim_init();
 
-//    exti_init();
+    exti_init();
 //	
 //	iwdg_init();
 }

@@ -50,8 +50,6 @@ static void chmod_led_operation(enum led_operation op, enum led_pin pin);
 static void fan1_speed_ctl_led_operation(enum led_operation op, enum led_pin pin);
 static void fan2_speed_ctl_led_operation(enum led_operation op, enum led_pin pin);
 
-#define    ULONG_MAX    0xFFFFFFFF
-
 void led_entry(void *pvParameters)
 {
 const TickType_t xTicksToWait = pdMS_TO_TICKS( 1000 );

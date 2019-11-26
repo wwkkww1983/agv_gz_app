@@ -5,6 +5,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "timers.h"
 #include "limits.h"
 
 #include "service.h"
@@ -31,6 +32,9 @@ void printf_entry( void *pvParameter );
 void cmd_entry( void *pvParameter );
 TaskHandle_t h_cmd_entry = NULL;
 
+//extern const uint8_t addr_list[8];
+const uint8_t addr_list[8] = {0x80, 0x82, 0x84, 0x86, 0x88, 0x8A, 0x8C, 0x8E};
+
 
 // 向打印任务传输数据的消息队列
 static QueueHandle_t xQueuePrint = NULL; 
@@ -38,10 +42,14 @@ static QueueHandle_t xQueuePrint = NULL;
 // log互斥
 SemaphoreHandle_t xMutexLog = NULL;
 
+// 测试用定时器
+TimerHandle_t xTimersBox_Test[NUM_TEST_TIMERS];
+static void vTimerTestCallback(void* parameter);
 
 void service_init(void)
 {
     BaseType_t xReturn = pdPASS;
+	uint32_t x;
 
 	xQueuePrint = xQueueCreate( PRINT_QUEUE_LENGTH, PRINT_QUEUE_ITEM_SIZE );
 	if( xQueuePrint == NULL ) { printf("\r\nxQueuePrint create failed"); }
@@ -65,7 +73,52 @@ void service_init(void)
     xMutexLog = xSemaphoreCreateMutex();
     if( xMutexLog == NULL ) { kprintf("\r\ncreate log mutex failed");}
 	
+	// create test timers
+	for( x = 0; x < NUM_TEST_TIMERS; x++ )
+	{
+		xTimersBox_Test[ x ] = xTimerCreate( "Timer",
+										      2000,
+										      pdFALSE,
+										      ( void * const) x,
+										      (TimerCallbackFunction_t) vTimerTestCallback
+										   );
+		if( xTimersBox_Test[ x ] == NULL )
+		{
+			/* The timer was not created. */
+			kprintf("\r\nnum of %d test-timers create failed", x);
+		}
+	}
 }
+
+static void vTimerTestCallback(void* parameter)
+{
+	uint32_t ulTimerID;
+	
+	ulTimerID = (uint32_t)pvTimerGetTimerID( parameter );
+	switch( ulTimerID )
+	{
+		case TEST_TIMER_ID_CAN:
+			if( g_e_can_test_status == CAN_TEST_CAN_COM ) {
+				// timeout, can test failed
+				xTaskNotify( h_cmd_entry, NOTIFY_TSK_CMD_CAN_TEST_FAILED, eSetBits );
+			}else if( g_e_can_test_status == CAN_TEST_PMBUS_COM ) {
+				// timeout, can test failed
+				xTaskNotify( h_cmd_entry, NOTIFY_TSK_CMD_PMBUS_TEST_FAILED, eSetBits );
+			}
+			break;
+		case TEST_TIMER_ID_485:
+			// timeout, 485 test failed
+			xTaskNotify( h_cmd_entry, NOTIFY_TSK_CMD_485_TEST_FAILED, eSetBits );
+			break;
+		case TEST_TIMER_ID_ETHERNET:
+			// timeout, ethernet test failed
+			xTaskNotify( h_cmd_entry, NOTIFY_TSK_CMD_ETHERNET_TEST_FAILED, eSetBits );
+			break;
+		default:
+			break;
+	}
+}
+
 
 void myprintf(const char *fmt, ...)
 {
@@ -204,23 +257,192 @@ BaseType_t xReturn = pdTRUE;
 
 #endif
 
-
-void cmd_entry( void *pvParameter )
+static void process_cmd(void)
 {
-//const TickType_t xMaxBlockTime = portMAX_DELAY; /*pdMS_TO_TICKS( 500 );*/
-	const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 1000 );
-BaseType_t xResult;
-uint32_t ulNotifiedValue;
-uint8_t rx_len = 0;
-uint8_t rx_len_tmp = 0;
-uint8_t idx = 0;
-
 uint8_t buffer[60];
 uint8_t buffer_part1[15];
 uint8_t buffer_part2[15];
 uint8_t buffer_part3[15];
 uint8_t buffer_part4[15];
 uint8_t *ptr = buffer;
+uint8_t rx_len = 0;
+uint8_t rx_len_tmp = 0;
+uint8_t idx = 0;
+	
+	ptr = buffer;
+	rx_len = com_cmd->get_rx_cnt();
+	rx_len_tmp = rx_len;
+	while( rx_len_tmp --)
+	{
+		sprintf((char*)ptr++, "%c",  com_cmd->read());
+	}
+	com_cmd->reset_rx();
+
+	if( strchr( (const char *)buffer, '_') != NULL )
+	{
+		// 取出第一部分
+		ptr = buffer_part1;
+		for( idx = 0; ( ( idx < ( sizeof( buffer ) / sizeof( buffer[0] ) ) ) && (buffer[idx] != '_') ); idx++ )
+		{
+			*ptr ++ = buffer[idx];
+			rx_len --;
+		}
+		*ptr = '\0';
+//					printf("\r\npart1:%s, left len:%d\n", buffer_part1, rx_len);
+		
+		// 取出第二部分
+		if( rx_len != 0 )
+		{
+			ptr = buffer_part2;
+			for( idx++; ( ( buffer[idx] != '_') && ( buffer[idx] != '\0' ) ); idx++ )
+			{
+				*ptr ++ = buffer[idx];
+				rx_len --;
+			}
+
+			rx_len--;
+
+			*ptr = '\0';
+//					    printf("\r\npart2:%s, left_len:%d\n", buffer_part2, rx_len);
+		}
+		
+		// 取出第三部分
+		if( rx_len != 0 )
+		{
+			ptr = buffer_part3;
+			for( idx++; ( ( buffer[idx] != '_') && ( buffer[idx] != '\0' ) ); idx++ )
+			{
+				*ptr ++ = buffer[idx];
+				rx_len --;
+			}
+
+			rx_len --;
+
+			*ptr = '\0';
+//					    printf("\r\npart3:%s, left_len:%d\n", buffer_part3, rx_len);
+		}
+
+		// 取出第四部分
+		if( rx_len != 0 )
+		{
+			ptr = buffer_part4;
+			for( idx++; ( ( buffer[idx] != '_') && ( buffer[idx] != '\0' ) ); idx++ )
+			{
+				*ptr ++ = buffer[idx];
+				rx_len --;
+			}
+			*ptr = '\0';
+//					    printf("\r\npart4:%s, left_len:%d\n", buffer_part4, rx_len);
+		}
+	}
+				
+	if( strcmp((const char*)buffer, "ps") == 0 ) 
+	{
+		print_tsk_status();
+	}
+	else if( strcmp((const char*)buffer, "ver") == 0 ) 
+	{
+		show_version();
+	}
+	else if( strcmp((const char*)buffer, "mem") == 0 ) 
+	{	
+		show_sys_mem();
+	}
+	else if( strcmp((const char*)buffer, "pmbus_comm") == 0 ) 
+	{
+		for( idx = 0; idx < 8; idx ++ )
+		{
+			if( ChkAddrDev( addr_list[ idx ] ) )
+			{
+				printf("\r\ndev %d online", idx+1);
+			}
+			else
+			{
+				printf("dev %d pmbus comm failed\n", idx+1);
+				vTaskDelay( pdMS_TO_TICKS( 20 ) );
+			}
+		}
+	}
+	else if( strcmp((const char*)buffer, "gz_test com uart_debug") == 0 ) 
+	{	
+		printf("gz_test com ack uart_debug");
+	}
+	else if( strcmp((const char*)buffer, "gz_test com ethernet") == 0 ) 
+	{
+	    xTaskNotify( h_ext_wifi_entry, NOTIFY_TSK_WIFI_TEST, eSetBits );
+	}
+	else if( strcmp((const char*)buffer, "gz_test com 485") == 0 ) 
+	{	
+	    xTaskNotify( h_ext_bms_comm_entry, NOTIFY_TSK_BMS_TEST, eSetBits );
+	}
+	else if( strcmp((const char*)buffer, "gz_test com can") == 0 ) 
+	{	
+	    xTaskNotify( h_can_comm_entry, NOTIFY_TSK_CAN_TEST, eSetBits );
+	}else if( strcmp((const char*)buffer, "gz_test com pmbus") == 0 ) 
+	{	
+		for( idx = 0; idx < 8; idx ++ )
+		{
+			if( ChkAddrDev( addr_list[ idx ] ) )
+			{
+				printf("gz_test com ack pmbus");
+				return;
+			}
+			vTaskDelay( pdMS_TO_TICKS( 20 ) );
+		}
+		printf("gz_test com nack pmbus");
+	}
+}
+
+static void process_test_result(uint32_t result)
+{
+	char tmp_buff[50];
+	uint32_t len = 0, i = 0;
+
+	switch( result )
+	{
+		case NOTIFY_TSK_CMD_CAN_TEST_SUCCESS:
+			sprintf(tmp_buff, "gz_test com ack can");
+		    break;
+	    case NOTIFY_TSK_CMD_CAN_TEST_FAILED:
+			sprintf(tmp_buff, "gz_test com nack can");
+		    break;
+	    case NOTIFY_TSK_CMD_485_TEST_SUCCESS:
+			sprintf(tmp_buff, "gz_test com ack 485");
+		    break;
+	    case NOTIFY_TSK_CMD_485_TEST_FAILED:
+			sprintf(tmp_buff, "gz_test com nack 485 %02X", g_u32_test_result_bms);
+		    break;
+	    case NOTIFY_TSK_CMD_ETHERNET_TEST_SUCCESS:
+			sprintf(tmp_buff, "gz_test com ack ethernet");
+		    break;
+	    case NOTIFY_TSK_CMD_ETHERNET_TEST_FAILED:
+			sprintf(tmp_buff, "gz_test com nack ethernet");
+		    break;
+		case NOTIFY_TSK_CMD_PMBUS_TEST_SUCCESS:
+			sprintf(tmp_buff, "gz_test com ack pmbus");
+		    break;
+	    case NOTIFY_TSK_CMD_PMBUS_TEST_FAILED:
+			sprintf(tmp_buff, "gz_test com nack pmbus");
+		    break;
+		default:
+			break;
+	}
+
+	len = strlen(tmp_buff);
+	for(i=0; i<len; i++)
+	{
+		com_cmd->write(tmp_buff[i]);
+	}
+
+    com_cmd->send();
+}
+
+void cmd_entry( void *pvParameter )
+{
+const TickType_t xMaxBlockTime = portMAX_DELAY; /*pdMS_TO_TICKS( 500 );*/
+//const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 1000 );
+BaseType_t xResult;
+uint32_t ulNotifiedValue;
 
 	for( ;; )
 	{
@@ -239,86 +461,12 @@ uint8_t *ptr = buffer;
             }
 			else if( ( ulNotifiedValue & RX_IDLE_BIT ) != 0 )
             {
-				ptr = buffer;
-				rx_len = com_cmd->get_rx_cnt();
-				rx_len_tmp = rx_len;
-				while( rx_len_tmp --)
-				{
-					sprintf((char*)ptr++, "%c",  com_cmd->read());
-				}
-				com_cmd->reset_rx();
-
-				if( strchr( (const char *)buffer, '_') != NULL )
-				{
-					// 取出第一部分
-					ptr = buffer_part1;
-					for( idx = 0; ( ( idx < ( sizeof( buffer ) / sizeof( buffer[0] ) ) ) && (buffer[idx] != '_') ); idx++ )
-					{
-						*ptr ++ = buffer[idx];
-						rx_len --;
-					}
-					*ptr = '\0';
-//					printf("\r\npart1:%s, left len:%d\n", buffer_part1, rx_len);
-					
-					// 取出第二部分
-					if( rx_len != 0 )
-					{
-					    ptr = buffer_part2;
-					    for( idx++; ( ( buffer[idx] != '_') && ( buffer[idx] != '\0' ) ); idx++ )
-					    {
-					    	*ptr ++ = buffer[idx];
-							rx_len --;
-					    }
-
-						rx_len--;
-
-					    *ptr = '\0';
-//					    printf("\r\npart2:%s, left_len:%d\n", buffer_part2, rx_len);
-					}
-					
-					// 取出第三部分
-					if( rx_len != 0 )
-					{
-					    ptr = buffer_part3;
-					    for( idx++; ( ( buffer[idx] != '_') && ( buffer[idx] != '\0' ) ); idx++ )
-					    {
-					    	*ptr ++ = buffer[idx];
-							rx_len --;
-					    }
-
-						rx_len --;
-
-					    *ptr = '\0';
-//					    printf("\r\npart3:%s, left_len:%d\n", buffer_part3, rx_len);
-					}
-
-					// 取出第四部分
-					if( rx_len != 0 )
-					{
-					    ptr = buffer_part4;
-					    for( idx++; ( ( buffer[idx] != '_') && ( buffer[idx] != '\0' ) ); idx++ )
-					    {
-					    	*ptr ++ = buffer[idx];
-							rx_len --;
-					    }
-					    *ptr = '\0';
-//					    printf("\r\npart4:%s, left_len:%d\n", buffer_part4, rx_len);
-					}
-			    }
-				
-				if( strcmp((const char*)buffer, "ps") == 0 ) 
-				{
-					print_tsk_status();
-				}
-				else if( strcmp((const char*)buffer, "ver") == 0 ) 
-				{
-					show_version();
-				}
-				else if( strcmp((const char*)buffer, "mem") == 0 ) 
-				{	
-				    show_sys_mem();
-				}
+				process_cmd();
             }
+			else
+			{
+			    process_test_result( ulNotifiedValue );
+			}
 		}
         else
         {

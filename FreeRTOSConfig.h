@@ -109,27 +109,26 @@
 #define configUSE_16_BIT_TICKS		0                             /* SysTick Counter的宽度，0表示32bit，1表示16bit，STM32用的是32bit */
 #define configIDLE_SHOULD_YIELD		1                             /* 上下文切换强制使能，即当前任务执行完毕之后还有剩余的时间片，可以强制自己放弃
                                                                    剩余的时间片，然后执行上下文切换去执行其他的任务*/
-//#define	configCHECK_FOR_STACK_OVERFLOW	2
+#define	configCHECK_FOR_STACK_OVERFLOW	2
 //#define	configCHECK_FOR_STACK_OVERFLOW	1
 
-/* 
-#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-	#define xSemaphoreCreateMutex() xQueueCreateMutex( queueQUEUE_TYPE_MUTEX )
-	其中，queueQUEUE_TYPE_MUTEX = 1 
-#endif
-*/
-//#define configSUPPORT_DYNAMIC_ALLOCATION 1  // for xSemaphoreCreateMutex
+
+#define configSUPPORT_DYNAMIC_ALLOCATION 1  // for xSemaphoreCreateMutex
 #define configUSE_MUTEXES 1 // for xQueueCreateMutex
+
+#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+	#define xSemaphoreCreateMutex() xQueueCreateMutex( queueQUEUE_TYPE_MUTEX ) // 其中，queueQUEUE_TYPE_MUTEX = 1 
+#endif
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		0                             /* 合作式调度配置 */
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
 
 /* 软件定时器定义 */
-//#define configUSE_TIMERS				    0
-//#define configTIMER_TASK_PRIORITY		  	( 2 )
-//#define configTIMER_QUEUE_LENGTH		  	10
-//#define configTIMER_TASK_STACK_DEPTH		( configMINIMAL_STACK_SIZE * 2 )
+#define configUSE_TIMERS				    1
+#define configTIMER_TASK_PRIORITY		  	( 2 )
+#define configTIMER_QUEUE_LENGTH		  	10
+#define configTIMER_TASK_STACK_DEPTH		( configMINIMAL_STACK_SIZE * 2 )
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */
